@@ -76,11 +76,14 @@ Telpo M1K, Android 12, NativePHP Mobile 4.7.0, app swiped away and screen off, d
 
 | Check | Result |
 | --- | --- |
-| One-time reminders 60 s and 120 s ahead | Fired at the second they were due |
+| One-time reminders 60 s and 120 s ahead, app swiped away, screen off | Fired at the second they were due |
 | Chain of 3 times (90, 150, 210 s) | All three fired on time; times 2 and 3 were armed by the phone with no PHP running |
+| Reboot with reminders pending | Restored. One due after 5 minutes fired 1 s late after the restart; one that fell due while the phone was off showed once right after boot (`source: restore`) |
+| Exact alarms switched off for the app | `schedule()` reports `exact: false`; Android used an inexact alarm with a 45 s window and the reminder still fired on time |
+| Snooze button | Pressing it showed the reminder again a minute later |
+| Tap the notification | Opens the app and clears the notification |
 | `status()`, `pending()`, `history()` | Return what Android and the store hold |
-| Reboot restore | Not yet run on this plugin: the test phone did not come back after the reboot. The same boot-filter fix passed on the plugin this one replaces (reminder set before a reboot fired on time after it) |
-| Exact alarms switched off, notifications off, Snooze button, tap to open | Not run yet |
+| Notifications switched off | Not run: on Android 12 they can only be switched off by hand in Settings. History marks such reminders `shown: false` |
 
 ## Tests
 
