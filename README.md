@@ -36,7 +36,7 @@ Alarms::schedule(
     title: 'Morning walk',
     body: '30 minutes, then breakfast',
     times: [$next->timestamp, $afterThat->timestamp],   // epoch seconds or DateTimeInterface
-    url: 'daybook://routine/r4',                         // opened when tapped (your deep link scheme)
+    url: 'hodie://routine/r4',                         // opened when tapped (your deep link scheme)
     snoozeMinutes: 10,                                   // adds a Snooze button
 );
 
