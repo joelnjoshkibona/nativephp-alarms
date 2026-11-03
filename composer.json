@@ -1,0 +1,41 @@
+{
+    "name": "blutrixx/nativephp-alarms",
+    "description": "NativePHP Mobile plugin: reminders that fire on time with the app closed. Exact alarms, restored after reboot, no server.",
+    "type": "nativephp-plugin",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Blutrixx"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "nativephp/mobile": "^3.0 || ^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Blutrixx\\Alarms\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Blutrixx\\Alarms\\AlarmsServiceProvider"
+            ]
+        },
+        "nativephp": {
+            "manifest": "nativephp.json"
+        }
+    },
+    "require-dev": {
+        "pestphp/pest": "^3.0"
+    },
+    "scripts": {
+        "test": "pest"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
