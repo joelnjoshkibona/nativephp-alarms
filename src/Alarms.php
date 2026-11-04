@@ -96,7 +96,7 @@ class Alarms
         return $this->call('Alarms.RequestNotificationPermission');
     }
 
-    /** @param  'notifications'|'exact'|'battery'|'app'  $page */
+    /** @param  'notifications'|'exact'|'battery'|'autostart'|'app'  $page */
     public function openSettings(string $page = 'app'): array
     {
         return $this->call('Alarms.OpenSettings', ['page' => $page]);

@@ -61,3 +61,18 @@ describe('Kotlin sources', function () {
         }
     });
 });
+
+describe('Settings pages', function () {
+    it('opens every page the PHP facade documents', function () {
+        $kotlin = file_get_contents($this->pluginPath.'/resources/android/AlarmsFunctions.kt');
+        $php = file_get_contents($this->pluginPath.'/src/Alarms.php');
+        preg_match("/@param  '([^']+(?:'\\|'[^']+)*)'\\s+\\\$page/", $php, $m);
+        expect($m)->not->toBeEmpty();
+
+        foreach (explode("'|'", $m[1]) as $page) {
+            if ($page !== 'app') {
+                expect($kotlin)->toContain('"'.$page.'" ->');
+            }
+        }
+    });
+});

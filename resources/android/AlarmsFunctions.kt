@@ -158,6 +158,9 @@ object AlarmsFunctions {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$pkg"))
                     else details
                 "battery" -> Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                // Transsion phones (Infinix, Tecno, itel) drop alarms for a closed app unless it is allowed in Phone Master's
+                // "Auto-start management". Other makers keep their own list; there the app's details page is the closest we open.
+                "autostart" -> Intent("com.cyin.himgr.applicationmanager.view.activities.AUTO_START_ACTIVITY")
                 else -> details
             }
             activity.runOnUiThread {

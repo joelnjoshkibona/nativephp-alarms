@@ -44,7 +44,7 @@ Alarms::cancel('routine-r4');
 Alarms::pending();   // ['items' => [['id', 'title', 'next', 'remaining'], ...]]
 ```
 
-`Alarms::status()` returns what Android allows right now: `notifications`, `exactAlarms`, `batteryUnrestricted`. `Alarms::openSettings('notifications' | 'exact' | 'battery' | 'app')` opens the right Android page. `Alarms::history()` lists the last 100 reminders that fired with `due` and `firedAt`, which is how to see how late Android was, and `shown: false` when notifications were off.
+`Alarms::status()` returns what Android allows right now: `notifications`, `exactAlarms`, `batteryUnrestricted`. `Alarms::openSettings('notifications' | 'exact' | 'battery' | 'autostart' | 'app')` opens the right Android page. `Alarms::history()` lists the last 100 reminders that fired with `due` and `firedAt`, which is how to see how late Android was, and `shown: false` when notifications were off.
 
 Every call returns an array. A failure is `['status' => 'error', 'code' => ..., 'message' => ...]`.
 
@@ -63,6 +63,7 @@ The plugin does **not** declare `USE_EXACT_ALARM`: Google Play limits it to alar
 
 * Android only. No iOS.
 * Some makers kill background apps or block alarms (battery "restricted", auto-start lists). Check `status()['batteryUnrestricted']` and point the person to `openSettings('battery')`.
+* **Infinix, Tecno and itel (Transsion) drop the alarm silently** for a closed app that is not allowed in Phone Master > Toolbox > Auto-start management (every app is "Prohibited" by default except a few messengers). Android still counts the alarm as fired, but the app never starts: no notification, no log line. `openSettings('autostart')` opens that screen on those phones. The setting cannot be read back, so ask the person to confirm it, and offer a test reminder (`schedule` ten seconds ahead) to prove it. On other makers `autostart` opens the app's details page.
 * A tap opens `url` through the app's deep link scheme (NativePHP `NATIVEPHP_DEEPLINK_SCHEME`). No PHP event is sent for taps.
 * No PHP runs when an alarm fires. Anything that needs PHP at a set time (a midnight roll-over) should be done when the app opens, with the reminder as the prompt.
 
@@ -83,6 +84,7 @@ Telpo M1K, Android 12, NativePHP Mobile 4.7.0, app swiped away and screen off, d
 | Snooze button | Pressing it showed the reminder again a minute later |
 | Tap the notification | Opens the app and clears the notification |
 | `status()`, `pending()`, `history()` | Return what Android and the store hold |
+| Infinix X692, Android 10 (Transsion), app swiped away, screen locked | **Not delivered** while Hodie was "Prohibited" in Auto-start management, also with battery set to unrestricted. After allowing it: fired at 13:00:00, notification with Snooze button, tap opened the linked page from a cold start |
 | Notifications switched off | Not run: on Android 12 they can only be switched off by hand in Settings. History marks such reminders `shown: false` |
 
 ## Tests
