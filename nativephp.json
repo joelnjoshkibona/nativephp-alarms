@@ -1,6 +1,6 @@
 {
     "name": "blutrixx/nativephp-alarms",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Reminders that fire on time with the app closed. Exact alarms, restored after reboot, no server.",
     "namespace": "Alarms",
     "keywords": ["alarms", "reminders", "notifications", "scheduling", "android"],

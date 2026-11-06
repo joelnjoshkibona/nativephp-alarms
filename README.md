@@ -87,6 +87,10 @@ Telpo M1K, Android 12, NativePHP Mobile 4.7.0, app swiped away and screen off, d
 | Infinix X692, Android 10 (Transsion), app swiped away, screen locked | **Not delivered** while Hodie was "Prohibited" in Auto-start management, also with battery set to unrestricted. After allowing it: fired at 13:00:00, notification with Snooze button, tap opened the linked page from a cold start |
 | Notifications switched off | Not run: on Android 12 they can only be switched off by hand in Settings. History marks such reminders `shown: false` |
 
+## App log
+
+When the `blutrixx/nativephp-device-utils` plugin (1.8.0 or later) is installed, the plugin writes to its app log by reflection (no hard dependency, nothing happens without it): each reminder that fires (id, due time, on time or how late, notification shown or not, exact alarms allowed), a warning when it was late or not shown, and after a restart or update how many reminders were armed or shown late. Titles are never logged.
+
 ## Tests
 
 `./vendor/bin/pest` checks the manifest against the Kotlin and PHP sources. Behaviour on a phone is tested with `adb` in a spike app (reminder with the app swiped away, forced Doze, reboot).
