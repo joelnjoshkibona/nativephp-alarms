@@ -13,12 +13,16 @@ class AlarmsReceiver : BroadcastReceiver() {
         val a = AlarmsStore.load(context, id)
         if (a == null) {
             Log.d("Alarms", "Fired for unknown reminder $id, ignored")
+            AppLogBridge.w('W', "an alarm fired for a reminder that is not stored ($id), ignored")
             return
         }
         val now = System.currentTimeMillis()
         val due = intent.getLongExtra("due", now)
         val shown = AlarmsNotifier.post(context, a, due)
         AlarmsStore.addHistory(context, a.id, a.title, due, shown, "alarm")
+        val late = (now - due) / 1000
+        AppLogBridge.w(if (!shown || late > 60) 'W' else 'I', "reminder fired: $id, due ${AppLogBridge.clock(due)}, ${if (late > 1) "$late s late" else "on time"}, " +
+            (if (shown) "notification shown" else "notification NOT shown (notifications off?)") + ", exact alarms " + (if (AlarmsScheduler.canExact(context)) "allowed" else "not allowed"))
 
         // Arm the next time in the list, so a repeating reminder keeps going while the app stays closed.
         val rest = a.copy(times = a.times.filter { it > now })

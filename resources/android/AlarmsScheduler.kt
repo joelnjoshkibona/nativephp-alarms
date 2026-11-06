@@ -56,11 +56,14 @@ object AlarmsScheduler {
     fun restoreAll(ctx: Context) {
         val now = System.currentTimeMillis()
         val window = AlarmsStore.config(ctx).optInt("missedWindowMinutes", DEFAULT_MISSED_WINDOW_MINUTES) * 60_000L
+        var armed = 0; var late = 0
         for (a in AlarmsStore.all(ctx)) {
             val missed = a.times.filter { it <= now && it >= now - window }.maxOrNull()
             if (missed != null) {
                 val shown = AlarmsNotifier.post(ctx, a, missed)
                 AlarmsStore.addHistory(ctx, a.id, a.title, missed, shown, "restore")
+                late++
+                AppLogBridge.w('W', "reminder ${a.id} was due at ${AppLogBridge.clock(missed)} while the phone was off or the app updated: shown now (${if (shown) "notification shown" else "notification NOT shown"})")
             }
             val rest = a.copy(times = a.times.filter { it > now })
             if (rest.times.isEmpty()) {
@@ -68,7 +71,9 @@ object AlarmsScheduler {
             } else {
                 AlarmsStore.save(ctx, rest)
                 arm(ctx, rest)
+                armed++
             }
         }
+        AppLogBridge.w('I', "reminders restored after a restart or update: $armed armed, $late shown late, exact alarms " + (if (canExact(ctx)) "allowed" else "not allowed"))
     }
 }
