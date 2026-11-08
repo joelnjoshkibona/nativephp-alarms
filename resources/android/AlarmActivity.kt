@@ -1,9 +1,7 @@
 package com.blutrixx.plugins.alarms
 
 import android.app.Activity
-import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -21,8 +19,8 @@ import java.text.DateFormat
 import java.util.Date
 
 /**
- * The alarm page: opened over the lock screen by an alarm-style reminder. The sound is the notification's (it repeats until the
- * notification is gone), so this page only shows what to do and ends it: Done, Snooze or Dismiss. No PHP runs here.
+ * The alarm page: opened over the lock screen by an alarm-style reminder. The sound is the ring service's (it loops until the
+ * alarm is answered), so this page only shows what to do and ends it: Done, Snooze or Dismiss. No PHP runs here.
  */
 class AlarmActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,7 +80,7 @@ class AlarmActivity : Activity() {
         if (body.isNotBlank()) col.addView(text(body, 17f, Color.parseColor("#CBD5E1"), false, 12))
         col.addView(View(this).apply { layoutParams = LinearLayout.LayoutParams(0, 0, 1f) })   // pushes the buttons down
 
-        val cancelNotification = { (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(id.hashCode()) }
+        val cancelNotification = { AlarmRingService.stop(this, id) }
         if (!doneUrl.isNullOrBlank()) {
             col.addView(pill(Color.parseColor("#16A34A"), "Done") {
                 cancelNotification()
@@ -98,7 +96,7 @@ class AlarmActivity : Activity() {
                     .putExtra("id", id).putExtra("title", title).putExtra("body", body)
                     .putExtra("url", i.getStringExtra("url")).putExtra("minutes", minutes)
                     .putExtra("screen", true).putExtra("doneUrl", doneUrl)
-                sendBroadcast(snooze)
+                sendBroadcast(snooze)   // the receiver silences the alarm and sets the next one
                 finish()
             })
         }
@@ -109,7 +107,7 @@ class AlarmActivity : Activity() {
     @Deprecated("Back ends the alarm too: the sound must not go on with the page gone")
     override fun onBackPressed() {
         val id = intent.getStringExtra("id")
-        if (id != null) (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(id.hashCode())
+        if (id != null) AlarmRingService.stop(this, id)
         @Suppress("DEPRECATION")
         super.onBackPressed()
     }

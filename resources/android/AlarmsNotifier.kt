@@ -24,6 +24,7 @@ object AlarmsNotifier {
     const val ACTION_SNOOZE = "com.blutrixx.plugins.alarms.SNOOZE"
     const val ACTION_DISMISS = "com.blutrixx.plugins.alarms.DISMISS"
     const val SCREEN_CHANNEL = "blutrixx_alarm_screen"
+    const val RING_CHANNEL = "blutrixx_alarm_ring"
     /** An alarm that nobody answers stops by itself after this long (it stays in the history). */
     private const val SCREEN_TIMEOUT_MS = 3 * 60_000L
 
@@ -46,6 +47,19 @@ object AlarmsNotifier {
             (ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(ch)
         }
         return SCREEN_CHANNEL
+    }
+
+    /** The channel of an alarm the ring service plays: loud and shown at once, but silent itself (the service plays the sound). */
+    fun ensureRingChannel(ctx: Context): String {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val ch = NotificationChannel(RING_CHANNEL, "Alarm reminders (ringing)", NotificationManager.IMPORTANCE_HIGH)
+            ch.description = "Shown while an alarm reminder rings"
+            ch.setSound(null, null)
+            ch.enableVibration(false)
+            ch.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+            (ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(ch)
+        }
+        return RING_CHANNEL
     }
 
     fun ensureChannel(ctx: Context): String {
@@ -97,16 +111,18 @@ object AlarmsNotifier {
         }
     }
 
-    /** Returns true when a notification was handed to Android (false: notifications are switched off). */
-    fun post(ctx: Context, a: Alarm, due: Long): Boolean {
-        val nm = NotificationManagerCompat.from(ctx)
-        if (!nm.areNotificationsEnabled()) {
-            Log.w(TAG, "Notifications are off, ${a.id} not shown")
-            return false
-        }
-        val channel = if (a.screen) ensureScreenChannel(ctx) else ensureChannel(ctx)
+    /**
+     * The notification of one reminder. `ring` is an alarm that the ring service plays: a silent channel (the service plays the sound,
+     * looped), and the tap and Done go through [AlarmOpenActivity] so they silence it. Otherwise the channel plays its own sound.
+     */
+    fun build(ctx: Context, a: Alarm, due: Long, ring: Boolean = false): Notification {
+        val channel = if (ring) ensureRingChannel(ctx) else if (a.screen) ensureScreenChannel(ctx) else ensureChannel(ctx)
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        val tap = PendingIntent.getActivity(ctx, a.id.hashCode() xor 0x5A5A, openIntent(ctx, a.url), flags)
+        fun viaOpen(url: String?, salt: Int): PendingIntent =
+            PendingIntent.getActivity(ctx, a.id.hashCode() xor salt, Intent(ctx, AlarmOpenActivity::class.java)
+                .putExtra("id", a.id).putExtra("open", url).setData(Uri.parse("alarms://open/$salt/${Uri.encode(a.id)}"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_HISTORY), flags)
+        val tap = if (ring) viaOpen(a.url, 0x5A5A) else PendingIntent.getActivity(ctx, a.id.hashCode() xor 0x5A5A, openIntent(ctx, a.url), flags)
         val b = NotificationCompat.Builder(ctx, channel)
             .setSmallIcon(smallIcon(ctx))
             .setContentTitle(a.title)
@@ -129,31 +145,55 @@ object AlarmsNotifier {
             b.addAction(0, "Snooze ${a.snoozeMinutes} min", snoozePi)
         }
         if (a.screen) {
-            wakeScreen(ctx)
-            // The alarm page opens over the lock screen (or heads-up when the phone is in use); the sound repeats until the
-            // notification is gone: Done, Snooze, Dismiss, a swipe, or the timeout.
+            // The alarm page opens over the lock screen (or heads-up when the phone is in use).
             val page = Intent(ctx, AlarmActivity::class.java)
                 .putExtra("id", a.id).putExtra("title", a.title).putExtra("body", a.body).putExtra("url", a.url)
                 .putExtra("doneUrl", a.doneUrl).putExtra("minutes", a.snoozeMinutes).putExtra("due", due)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION)
             b.setFullScreenIntent(PendingIntent.getActivity(ctx, a.id.hashCode() xor 0x3C3C, page, flags), true)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setTimeoutAfter(SCREEN_TIMEOUT_MS)
             val dismiss = Intent(ctx, AlarmsActionReceiver::class.java)
                 .setAction(ACTION_DISMISS).setData(Uri.parse("alarms://dismiss/${Uri.encode(a.id)}")).putExtra("id", a.id)
-            b.addAction(0, "Dismiss", PendingIntent.getBroadcast(ctx, a.id.hashCode() xor 0x4D4D, dismiss, flags))
+            val dismissPi = PendingIntent.getBroadcast(ctx, a.id.hashCode() xor 0x4D4D, dismiss, flags)
+            b.addAction(0, "Dismiss", dismissPi).setDeleteIntent(dismissPi)
             if (!a.doneUrl.isNullOrBlank()) {
-                b.addAction(0, "Done", PendingIntent.getActivity(ctx, a.id.hashCode() xor 0x2B2B, openIntent(ctx, a.doneUrl), flags))
+                val done = if (ring) viaOpen(a.doneUrl, 0x2B2B) else PendingIntent.getActivity(ctx, a.id.hashCode() xor 0x2B2B, openIntent(ctx, a.doneUrl), flags)
+                b.addAction(0, "Done", done)
             }
+            if (ring) b.setOngoing(true) else b.setTimeoutAfter(SCREEN_TIMEOUT_MS)
         }
+        val n = b.build()
+        if (a.screen && !ring) n.flags = n.flags or Notification.FLAG_INSISTENT
+        return n
+    }
+
+    /** A notification that plays its channel's sound (the fallback for an alarm, and every ordinary reminder). */
+    fun postPlain(ctx: Context, a: Alarm, due: Long): Boolean {
         return try {
-            val n = b.build()
-            if (a.screen) n.flags = n.flags or Notification.FLAG_INSISTENT
-            nm.notify(a.id.hashCode(), n)
+            NotificationManagerCompat.from(ctx).notify(a.id.hashCode(), build(ctx, a, due, ring = false))
             true
         } catch (e: SecurityException) {
             Log.w(TAG, "Notification refused for ${a.id}: ${e.message}")
             false
+        }
+    }
+
+    /** Returns true when a notification was handed to Android (false: notifications are switched off). */
+    fun post(ctx: Context, a: Alarm, due: Long): Boolean {
+        if (!NotificationManagerCompat.from(ctx).areNotificationsEnabled()) {
+            Log.w(TAG, "Notifications are off, ${a.id} not shown")
+            return false
+        }
+        if (!a.screen) return postPlain(ctx, a, due)
+        wakeScreen(ctx)
+        // The ring service shows the notification and plays the looped sound; if Android will not run it, the plain notification does.
+        return try {
+            AlarmRingService.start(ctx, a, due)
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "Ring service not started for ${a.id}: ${e.message}")
+            AppLogBridge.w('W', "the alarm sound service could not start (${e.javaClass.simpleName}), using the notification's own sound")
+            postPlain(ctx, a, due)
         }
     }
 }

@@ -1,6 +1,6 @@
 {
     "name": "blutrixx/nativephp-alarms",
-    "version": "1.2.1",
+    "version": "1.3.0",
     "description": "Reminders that fire on time with the app closed. Exact alarms, restored after reboot, no server.",
     "namespace": "Alarms",
     "keywords": [
@@ -116,7 +116,9 @@
             "android.permission.RECEIVE_BOOT_COMPLETED",
             "android.permission.VIBRATE",
             "android.permission.USE_FULL_SCREEN_INTENT",
-            "android.permission.WAKE_LOCK"
+            "android.permission.WAKE_LOCK",
+            "android.permission.FOREGROUND_SERVICE",
+            "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
         ],
         "receivers": [
             {
@@ -160,6 +162,19 @@
                 "exported": false,
                 "theme": "@android:style/Theme.DeviceDefault.NoActionBar",
                 "launchMode": "singleTop"
+            },
+            {
+                "name": ".AlarmOpenActivity",
+                "exported": false,
+                "theme": "@android:style/Theme.Translucent.NoTitleBar",
+                "launchMode": "singleTop"
+            }
+        ],
+        "services": [
+            {
+                "name": ".AlarmRingService",
+                "exported": false,
+                "foregroundServiceType": "mediaPlayback"
             }
         ]
     }
