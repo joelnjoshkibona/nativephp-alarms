@@ -60,6 +60,9 @@ object AlarmsFunctions {
             val body = parameters["body"] as? String ?: ""
             val url = (parameters["url"] as? String)?.takeIf { it.isNotBlank() }
             val snooze = (parameters["snoozeMinutes"] as? Number)?.toInt() ?: 0
+            val screenP = parameters["screen"]
+            val screen = screenP == true || screenP == "true" || (screenP as? Number)?.toInt() == 1
+            val doneUrl = (parameters["doneUrl"] as? String)?.takeIf { it.isNotBlank() }
             val now = System.currentTimeMillis()
             val times = listOf(parameters["times"])
                 .flatMap { asList(it) }
@@ -72,7 +75,7 @@ object AlarmsFunctions {
 
             applyChannel(context, parameters)
             AlarmsNotifier.ensureChannel(context)
-            val alarm = Alarm(id, title, body, url, times, snooze)
+            val alarm = Alarm(id, title, body, url, times, snooze, screen, doneUrl)
             AlarmsStore.save(context, alarm)
             AlarmsScheduler.disarm(context, id)
             val next = AlarmsScheduler.arm(context, alarm) ?: return BridgeResponse.error("NO_FUTURE_TIME", "None of the times is in the future")
@@ -127,6 +130,7 @@ object AlarmsFunctions {
                     "notifications" to NotificationManagerCompat.from(context).areNotificationsEnabled(),
                     "exactAlarms" to AlarmsScheduler.canExact(context),
                     "batteryUnrestricted" to pm.isIgnoringBatteryOptimizations(context.packageName),
+                    "fullScreen" to AlarmsNotifier.canFullScreen(context),
                     "sdk" to Build.VERSION.SDK_INT,
                     "manufacturer" to Build.MANUFACTURER,
                 ),
@@ -158,6 +162,10 @@ object AlarmsFunctions {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$pkg"))
                     else details
                 "battery" -> Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                // Android 14 starts with the alarm page over the lock screen switched off for most apps
+                "fullscreen" ->
+                    if (Build.VERSION.SDK_INT >= 34) Intent("android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT", Uri.parse("package:$pkg"))
+                    else details
                 // Transsion phones (Infinix, Tecno, itel) drop alarms for a closed app unless it is allowed in Phone Master's
                 // "Auto-start management". Other makers keep their own list; there the app's details page is the closest we open.
                 "autostart" -> Intent("com.cyin.himgr.applicationmanager.view.activities.AUTO_START_ACTIVITY")

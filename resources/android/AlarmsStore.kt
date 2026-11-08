@@ -12,6 +12,10 @@ data class Alarm(
     val url: String?,
     val times: List<Long>,
     val snoozeMinutes: Int,
+    /** Rings as an alarm: a full-screen page over the lock screen and a sound that repeats until it is dealt with. */
+    val screen: Boolean = false,
+    /** Opened by the alarm page's Done button (the app marks the thing done). Null: no Done button. */
+    val doneUrl: String? = null,
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("id", id)
@@ -20,6 +24,8 @@ data class Alarm(
         .put("url", url ?: JSONObject.NULL)
         .put("times", JSONArray(times))
         .put("snoozeMinutes", snoozeMinutes)
+        .put("screen", screen)
+        .put("doneUrl", doneUrl ?: JSONObject.NULL)
 
     companion object {
         fun fromJson(o: JSONObject): Alarm {
@@ -31,6 +37,8 @@ data class Alarm(
                 url = if (o.isNull("url")) null else o.getString("url"),
                 times = List(t.length()) { t.getLong(it) },
                 snoozeMinutes = o.optInt("snoozeMinutes", 0),
+                screen = o.optBoolean("screen", false),
+                doneUrl = if (o.isNull("doneUrl")) null else o.optString("doneUrl").takeIf { it.isNotBlank() },
             )
         }
     }

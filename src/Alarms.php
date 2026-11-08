@@ -42,8 +42,10 @@ class Alarms
      * @param  array<int, int|DateTimeInterface>  $times  Epoch seconds or dates. Past times are ignored; at most 100 are kept.
      * @param  string|null  $url  Opened when the reminder is tapped, for example 'myapp://tasks/42' (the app's deep link scheme).
      * @param  int  $snoozeMinutes  Adds a Snooze button that shows the reminder again after this many minutes. 0 for none.
+     * @param  bool  $screen  Rings as an alarm: a full-screen page over the lock screen, and the alarm sound repeating until it is answered.
+     * @param  string|null  $doneUrl  Opened by the alarm page's Done button (a deep link). Without one there is no Done button.
      */
-    public function schedule(string $id, string $title, string $body, array $times, ?string $url = null, int $snoozeMinutes = 0): array
+    public function schedule(string $id, string $title, string $body, array $times, ?string $url = null, int $snoozeMinutes = 0, bool $screen = false, ?string $doneUrl = null): array
     {
         if ($id === '') {
             throw new InvalidArgumentException('A reminder needs an id.');
@@ -61,6 +63,8 @@ class Alarms
             'times' => array_values($seconds),
             'url' => $url,
             'snoozeMinutes' => max(0, $snoozeMinutes),
+            'screen' => $screen,
+            'doneUrl' => $doneUrl,
         ]);
     }
 

@@ -1,77 +1,110 @@
 {
     "name": "blutrixx/nativephp-alarms",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Reminders that fire on time with the app closed. Exact alarms, restored after reboot, no server.",
     "namespace": "Alarms",
-    "keywords": ["alarms", "reminders", "notifications", "scheduling", "android"],
+    "keywords": [
+        "alarms",
+        "reminders",
+        "notifications",
+        "scheduling",
+        "android"
+    ],
     "category": "utilities",
     "license": "MIT",
-    "pricing": {"type": "free"},
-    "author": {"name": "Blutrixx", "url": ""},
+    "pricing": {
+        "type": "free"
+    },
+    "author": {
+        "name": "Blutrixx",
+        "url": ""
+    },
     "homepage": "https://github.com/joelnjoshkibona/nativephp-alarms",
     "repository": "https://github.com/joelnjoshkibona/nativephp-alarms",
-    "platforms": ["android"],
+    "platforms": [
+        "android"
+    ],
     "service_provider": "Blutrixx\\Alarms\\AlarmsServiceProvider",
     "events": [],
     "bridge_functions": [
         {
             "name": "Alarms.Configure",
             "android": "com.blutrixx.plugins.alarms.AlarmsFunctions.Configure",
-            "android_params": ["context"],
+            "android_params": [
+                "context"
+            ],
             "description": "Store channel name, small icon (base64 PNG) and how late a missed reminder may still show after a reboot"
         },
         {
             "name": "Alarms.Schedule",
             "android": "com.blutrixx.plugins.alarms.AlarmsFunctions.Schedule",
-            "android_params": ["context"],
+            "android_params": [
+                "context"
+            ],
             "description": "Schedule a reminder for a list of times (epoch seconds). The first is armed now; each later one is armed when the one before fires, with no PHP running"
         },
         {
             "name": "Alarms.Cancel",
             "android": "com.blutrixx.plugins.alarms.AlarmsFunctions.Cancel",
-            "android_params": ["context"],
+            "android_params": [
+                "context"
+            ],
             "description": "Cancel one reminder by id"
         },
         {
             "name": "Alarms.CancelAll",
             "android": "com.blutrixx.plugins.alarms.AlarmsFunctions.CancelAll",
-            "android_params": ["context"],
+            "android_params": [
+                "context"
+            ],
             "description": "Cancel every reminder"
         },
         {
             "name": "Alarms.GetPending",
             "android": "com.blutrixx.plugins.alarms.AlarmsFunctions.GetPending",
-            "android_params": ["context"],
+            "android_params": [
+                "context"
+            ],
             "description": "List scheduled reminders with their next time and how many are left"
         },
         {
             "name": "Alarms.Status",
             "android": "com.blutrixx.plugins.alarms.AlarmsFunctions.Status",
-            "android_params": ["context"],
+            "android_params": [
+                "context"
+            ],
             "description": "What Android allows now: notifications, exact alarms, battery unrestricted"
         },
         {
             "name": "Alarms.RequestNotificationPermission",
             "android": "com.blutrixx.plugins.alarms.AlarmsFunctions.RequestNotificationPermission",
-            "android_params": ["activity"],
+            "android_params": [
+                "activity"
+            ],
             "description": "Ask for the notification permission (Android 13 and above). Check Status afterwards"
         },
         {
             "name": "Alarms.OpenSettings",
             "android": "com.blutrixx.plugins.alarms.AlarmsFunctions.OpenSettings",
-            "android_params": ["activity"],
+            "android_params": [
+                "activity"
+            ],
             "description": "Open an Android settings page: notifications, exact, battery or app"
         },
         {
             "name": "Alarms.History",
             "android": "com.blutrixx.plugins.alarms.AlarmsFunctions.History",
-            "android_params": ["context"],
+            "android_params": [
+                "context"
+            ],
             "description": "The last reminders that fired: due time, real time, whether a notification was shown"
         },
         {
             "name": "Alarms.ClearHistory",
             "android": "com.blutrixx.plugins.alarms.AlarmsFunctions.ClearHistory",
-            "android_params": ["context"],
+            "android_params": [
+                "context"
+            ],
             "description": "Clear the fired history"
         }
     ],
@@ -81,21 +114,29 @@
             "android.permission.POST_NOTIFICATIONS",
             "android.permission.SCHEDULE_EXACT_ALARM",
             "android.permission.RECEIVE_BOOT_COMPLETED",
-            "android.permission.VIBRATE"
+            "android.permission.VIBRATE",
+            "android.permission.USE_FULL_SCREEN_INTENT"
         ],
         "receivers": [
             {
                 "name": ".AlarmsReceiver",
                 "exported": false,
                 "intent_filters": [
-                    {"action": "com.blutrixx.plugins.alarms.FIRE"}
+                    {
+                        "action": "com.blutrixx.plugins.alarms.FIRE"
+                    }
                 ]
             },
             {
                 "name": ".AlarmsActionReceiver",
                 "exported": false,
                 "intent_filters": [
-                    {"action": "com.blutrixx.plugins.alarms.SNOOZE"}
+                    {
+                        "action": [
+                            "com.blutrixx.plugins.alarms.SNOOZE",
+                            "com.blutrixx.plugins.alarms.DISMISS"
+                        ]
+                    }
                 ]
             },
             {
@@ -110,6 +151,14 @@
                         ]
                     }
                 ]
+            }
+        ],
+        "activities": [
+            {
+                "name": ".AlarmActivity",
+                "exported": false,
+                "theme": "@android:style/Theme.DeviceDefault.NoActionBar",
+                "launchMode": "singleTop"
             }
         ]
     }
