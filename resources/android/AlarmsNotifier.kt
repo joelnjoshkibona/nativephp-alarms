@@ -11,6 +11,7 @@ import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.util.Base64
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -81,6 +82,21 @@ object AlarmsNotifier {
         return i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     }
 
+    /**
+     * Turns the screen on for a few seconds. The full-screen page does this by itself where Android allows it; some phones (Transsion's
+     * HiOS, Android 14 with the setting off) hold the page back, and then a sleeping phone would ring with a dark screen.
+     */
+    @Suppress("DEPRECATION")
+    private fun wakeScreen(ctx: Context) {
+        try {
+            val pm = ctx.getSystemService(Context.POWER_SERVICE) as PowerManager
+            pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP or PowerManager.ON_AFTER_RELEASE, "hodie:alarm")
+                .acquire(15_000L)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not wake the screen: ${e.message}")
+        }
+    }
+
     /** Returns true when a notification was handed to Android (false: notifications are switched off). */
     fun post(ctx: Context, a: Alarm, due: Long): Boolean {
         val nm = NotificationManagerCompat.from(ctx)
@@ -113,6 +129,7 @@ object AlarmsNotifier {
             b.addAction(0, "Snooze ${a.snoozeMinutes} min", snoozePi)
         }
         if (a.screen) {
+            wakeScreen(ctx)
             // The alarm page opens over the lock screen (or heads-up when the phone is in use); the sound repeats until the
             // notification is gone: Done, Snooze, Dismiss, a swipe, or the timeout.
             val page = Intent(ctx, AlarmActivity::class.java)

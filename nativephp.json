@@ -1,6 +1,6 @@
 {
     "name": "blutrixx/nativephp-alarms",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Reminders that fire on time with the app closed. Exact alarms, restored after reboot, no server.",
     "namespace": "Alarms",
     "keywords": [
@@ -115,7 +115,8 @@
             "android.permission.SCHEDULE_EXACT_ALARM",
             "android.permission.RECEIVE_BOOT_COMPLETED",
             "android.permission.VIBRATE",
-            "android.permission.USE_FULL_SCREEN_INTENT"
+            "android.permission.USE_FULL_SCREEN_INTENT",
+            "android.permission.WAKE_LOCK"
         ],
         "receivers": [
             {
